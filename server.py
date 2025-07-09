@@ -15,6 +15,7 @@ def main():
     try:
         #provid the server with address
         server.bind((HOST, PORT))
+        print(f"server is running on {HOST} {PORT}")
     except:
         print(f"unable to binf to host {HOST} and port {PORT}")
 
