@@ -4,6 +4,34 @@ import threading
 HOST = '127.0.0.1' 
 PORT = 1234 #can use any port from 0-65535
 LISTENER_LIMIT = 2 #only two people can communicate
+active_clients = [] #list of all connected users
+
+#listens for any upcoming messages from a client
+def listen_for_messages(client, username):
+    while 1:
+        message = client.recv(2048).decode('utf-8')
+        final_msg = username + ':' + message
+        send_message(final_msg)
+
+
+
+#sends any new message to other client connected to the server
+def send_message(client, message):
+    client.sendall(message.encode())
+        
+
+#function to handle client
+def client_handler(client):
+    #server will listen for username
+    while 1:
+        username = client.recv(2048).decode('utf-8') #decode since everything sent in byte form
+        if username != '':
+            active_clients.append((username, client))
+            break
+        else:
+            print("username is empty")
+
+    threading.Thread(target=listen_for_messages, args=(client, username, )).start()
 
 def main():
     #creating the socket object
@@ -26,6 +54,9 @@ def main():
     while 1:
         client, address = server.accept() 
         print(f"successfully connected to client {address[0]} {address[1]}") #address is a double (host and port)
+
+        #creating a thread to perform the function
+        threading.Thread(target=client_handler, args=(client, )).start()
 
 #will only run main when server.py is run directly and not when it's imported
 if __name__=='__main__':
