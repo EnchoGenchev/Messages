@@ -9,16 +9,28 @@ active_clients = [] #list of all connected users
 #listens for any upcoming messages from a client
 def listen_for_messages(client, username):
     while 1:
+    
         message = client.recv(2048).decode('utf-8')
-        final_msg = username + ':' + message
-        send_message(final_msg)
-
-
+        if message:
+            final_msg = username + '~' + message
+            send_message(final_msg)
+        else:
+            remove_client(client, username)
+            break
 
 #sends any new message to other client connected to the server
-def send_message(client, message):
-    client.sendall(message.encode())
-        
+def send_message(message):
+    for user, conn in active_clients:
+        conn.sendall(message.encode())
+       
+
+#function to remove a client
+def remove_client(client, username):
+    client.close()
+    for user in active_clients:
+        if user[0] == username:
+            active_clients.remove(user)
+            break
 
 #function to handle client
 def client_handler(client):
