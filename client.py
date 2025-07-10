@@ -2,6 +2,11 @@ import socket
 import threading
 import tkinter as tk
 from tkinter import scrolledtext
+from tkinter import messagebox
+
+
+HOST = '127.0.0.1'
+PORT = 1234
 
 #fonts and colors to be used
 BLUE ='lightsteelblue'
@@ -12,11 +17,39 @@ WHITE ='white'
 FONT = ("Helvitica", 17)
 FONT2 = ("Helvitica", 13)
 
+#creating socket object
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #same format as server side
+
+#functions so gui works
+def add_message(message):
+    message_box.config(state=tk.NORMAL) #temporarily able to change the textbox
+    message_box.insert(tk.END, message + '\n') #so that newer messages are seen at the bottom
+    message_box.config(state=tk.DISABLED)
+
 def connect():
-    print("yo")
+    #connect to the server
+    try:
+        client.connect((HOST, PORT))
+        add_message("[SERVER] Suffessfully connected")
+    except:
+        #error message for gui
+        messagebox.showerror("Unable to connect to server", f"unable to connect to server {HOST} {PORT}")
+
+    username = username_text.get() #getting what the user inputted in the gui
+    if username != '':
+        client.sendall(username.encode())
+    else:
+        messagebox.showerror("Invalid username","Username cannot be empty")
+        exit(0)
+
+    threading.Thread(target=listen_for_messages, args=(client, )).start()
+
+    send_message(client)
+
 
 def send_message():
-    print("yo mama")
+    message = message_textbox.get()
+    client.sendall(message.encode())
 
 #making gui for users
 root = tk.Tk()
@@ -56,54 +89,17 @@ message_textbox.pack(side=tk.LEFT, padx=15)
 message_button = tk.Button(bottom, text="Send", font=FONT2, bg=GRAY, fg=BLUE2, command=send_message)
 message_button.pack(side=tk.LEFT, padx=2)
 
-
-HOST = '127.0.0.1'
-PORT = 1234
-
 def listen_for_messages(client):
     while 1:
         message = client.recv(2048).decode('utf-8')
         username = message.split("~")[0]
         content = message.split("~")[1]
-        print(f"[{username}] {content}")
-
-def send_message(client):
-    while 1:
-        message = input("Message: ")
-        client.sendall(message.encode())
-
-def communicate_to_server(client):
-
-    username = input("Enter username: ")
-    if username != '':
-        client.sendall(username.encode())
-    else:
-        print("Username cannot be empty")
-        exit(0)
-
-    threading.Thread(target=listen_for_messages, args=(client, )).start()
-
-    send_message(client)
-
+        add_message(f"[{username}] {content}")
+        
 
 def main():
 
     root.mainloop() #renders window frame by frame
-
-
-    #creating socket object
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #same format as server side
-
-    #connect to the server
-    try:
-        client.connect((HOST, PORT))
-        print("successfully connected to server")
-    except:
-        print(f"unable to connect to server {HOST} {PORT}")
-        return
-
-    communicate_to_server(client)
-
 
 #good practice
 if __name__ == '__main__':
