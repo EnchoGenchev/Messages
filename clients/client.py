@@ -3,7 +3,7 @@ import threading
 import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import messagebox
-
+import os
 
 HOST = '127.0.0.1'
 PORT = 1234
@@ -30,7 +30,7 @@ def connect():
     #connect to the server
     try:
         client.connect((HOST, PORT))
-        add_message("[SERVER] Suffessfully connected")
+        add_message("[SERVER] Successfully connected")
     except:
         #error message for gui
         messagebox.showerror("Unable to connect to server", f"unable to connect to server {HOST} {PORT}")
@@ -44,12 +44,24 @@ def connect():
 
     threading.Thread(target=listen_for_messages, args=(client, )).start()
 
-    send_message(client)
-
-
 def send_message():
-    message = message_textbox.get()
+    message = message_textbox.get() #getting what was typed in the textbox by the user
     client.sendall(message.encode())
+
+def send_file():
+    filename = message_textbox.get()
+    if not os.path.exists(filename):
+        add_message("ERROR: File not found")
+    else:
+        #making a tag so that can be identified as file in server
+        client.sendall(f"FILE:{filename}".encode()) 
+        with open(filename, 'rb') as file: #readbytes mode
+            while True:
+                file_data = file.read(1024)
+                if not file_data:
+                    break
+                client.sendall(file_data)
+        client.sendall(b"ENDFILE")  # signal end of file
 
 #making gui for users
 root = tk.Tk()
@@ -64,43 +76,51 @@ root.grid_rowconfigure(2, weight=1)
 
 #different sections of window
 top = tk.Frame(root, width=600, height=100, bg=GRAY)
-top.grid(row=0, column=0, sticky=tk.NSEW) #grid divides window into sections for frames to be assigned
+top.grid(row=0, column=0, sticky=tk.NSEW) 
 #adding features to window
 username_label = tk.Label(top, text="Enter username: ", font=FONT, bg=GRAY, fg=BLUE2)
-username_label.pack(side=tk.LEFT, padx=10) #positions element in the frame
+username_label.pack(side=tk.LEFT, padx=10)
 username_text = tk.Entry(top, font=FONT, bg=GRAY, fg=BLUE2, width=23)
 username_text.pack(side=tk.LEFT)
-#when user clicks the button, perform the following function
 username_button = tk.Button(top, text="Join", font=FONT2, bg=GRAY, fg=BLUE2, command=connect)
 username_button.pack(side=tk.LEFT,padx=15)
 
 middle = tk.Frame(root, width=600, height=400, bg=BLUE2)
 middle.grid(row=1,column=0, sticky=tk.NSEW)
-#displaying messages being sent
 message_box = scrolledtext.ScrolledText(middle, font=FONT2, bg=BLUE2, width=60, height=23)
-message_box.config(state=tk.DISABLED) #user can't directly add text
+message_box.config(state=tk.DISABLED)
 message_box.pack(side=tk.LEFT,padx=15)
 
 bottom = tk.Frame(root, width=600, height = 100, bg=GRAY)
 bottom.grid(row=2, column=0, sticky=tk.NSEW)
-#widgets for bottom frame
-message_textbox = tk.Entry(bottom, font=FONT, bg=GRAY, fg=BLUE2, width=38)
+message_textbox = tk.Entry(bottom, font=FONT, bg=GRAY, fg=BLUE2, width=34)
 message_textbox.pack(side=tk.LEFT, padx=15)
-message_button = tk.Button(bottom, text="Send", font=FONT2, bg=GRAY, fg=BLUE2, command=send_message)
+message_button = tk.Button(bottom, text="Text", font=FONT2, bg=GRAY, fg=BLUE2, command=send_message)
 message_button.pack(side=tk.LEFT, padx=2)
+file_button = tk.Button(bottom, text="File", font=FONT2, bg=GRAY, fg=BLUE2, command=send_file)
+file_button.pack(side=tk.LEFT, padx=2)
 
 def listen_for_messages(client):
     while 1:
-        message = client.recv(2048).decode('utf-8')
-        username = message.split("~")[0]
-        content = message.split("~")[1]
-        add_message(f"[{username}] {content}")
-        
+        try:
+            message = client.recv(2048)
+            if message.startswith(b"FILE:"):
+                filename = message.decode().split(":", 1)[1]
+                add_message(f"[SERVER] Receiving file: {filename}")
+                with open("RECEIVED_" + os.path.basename(filename), 'wb') as f:
+                    data = client.recv(1024)
+                    f.write(data)
+                add_message(f"[SERVER] File {filename} received successfully")
+            else:
+                decoded = message.decode('utf-8')
+                username = decoded.split("~")[0]
+                content = decoded.split("~")[1]
+                add_message(f"[{username}] {content}")
+        except:
+            break
 
 def main():
+    root.mainloop()
 
-    root.mainloop() #renders window frame by frame
-
-#good practice
 if __name__ == '__main__':
     main()

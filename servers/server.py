@@ -9,12 +9,15 @@ active_clients = [] #list of all connected users
 #listens for any upcoming messages from a client
 def listen_for_messages(client, username):
     while 1:
-    
-        message = client.recv(2048).decode('utf-8')
-        if message:
-            final_msg = username + '~' + message
-            send_message(final_msg)
-        else:
+        try:
+            message = client.recv(2048)
+            if message.startswith(b"FILE:"):
+                filename = message.decode().split(":", 1)[1]
+                receive_file(client, filename, username)
+            else:
+                final_msg = username + '~' + message.decode('utf-8')
+                send_message(final_msg)
+        except:
             remove_client(client, username)
             break
 
@@ -22,7 +25,18 @@ def listen_for_messages(client, username):
 def send_message(message):
     for user, conn in active_clients:
         conn.sendall(message.encode())
-       
+
+def receive_file(client, filename, username):
+    file_data = client.recv(1024)
+    # saving on server side
+    with open("SERVER_" + filename, 'wb') as f:
+        f.write(file_data)
+
+    # send file to all clients
+    for user, conn in active_clients:
+        if conn != client:
+            conn.sendall(f"FILE:{filename}".encode())
+            conn.sendall(file_data)
 
 #function to remove a client
 def remove_client(client, username):
@@ -34,9 +48,8 @@ def remove_client(client, username):
 
 #function to handle client
 def client_handler(client):
-    #server will listen for username
     while 1:
-        username = client.recv(2048).decode('utf-8') #decode since everything sent in byte form
+        username = client.recv(2048).decode('utf-8')
         if username != '':
             active_clients.append((username, client))
             break
@@ -46,30 +59,19 @@ def client_handler(client):
     threading.Thread(target=listen_for_messages, args=(client, username, )).start()
 
 def main():
-    #creating the socket object
-    #AF_INET: using IPv4 addresses
-    #SOCK_STREAM: using TCP packets (transmission control protocols)
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    #try catch block to make sure host and port are available
     try:
-        #provid the server with address
         server.bind((HOST, PORT))
         print(f"server is running on {HOST} {PORT}")
     except:
-        print(f"unable to binf to host {HOST} and port {PORT}")
+        print(f"unable to bind to host {HOST} and port {PORT}")
 
-    #set server limit
     server.listen(LISTENER_LIMIT)
 
-    #will keep listening to client connections
     while 1:
         client, address = server.accept() 
-        print(f"successfully connected to client {address[0]} {address[1]}") #address is a double (host and port)
-
-        #creating a thread to perform the function
+        print(f"successfully connected to client {address[0]} {address[1]}")
         threading.Thread(target=client_handler, args=(client, )).start()
 
-#will only run main when server.py is run directly and not when it's imported
 if __name__=='__main__':
     main()
