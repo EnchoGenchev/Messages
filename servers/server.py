@@ -1,14 +1,13 @@
-import socket #allows for creation of client server apps
+import socket
 import threading
 
-HOST = '127.0.0.1' 
-PORT = 1234 #can use any port from 0-65535
-LISTENER_LIMIT = 2 #only two people can communicate
-active_clients = [] #list of all connected users
+HOST = '127.0.0.1'
+PORT = 1234
+LISTENER_LIMIT = 2
+active_clients = []
 
-#listens for any upcoming messages from a client
 def listen_for_messages(client, username):
-    while 1:
+    while True:
         try:
             message = client.recv(2048)
             if message.startswith(b"FILE:"):
@@ -21,24 +20,28 @@ def listen_for_messages(client, username):
             remove_client(client, username)
             break
 
-#sends any new message to other client connected to the server
 def send_message(message):
     for user, conn in active_clients:
         conn.sendall(message.encode())
 
 def receive_file(client, filename, username):
-    file_data = client.recv(1024)
-    # saving on server side
+    file_data = b""
+    while True:
+        chunk = client.recv(1024)
+        if b"ENDFILE" in chunk:
+            file_data += chunk.replace(b"ENDFILE", b"")
+            break
+        file_data += chunk
+
     with open("SERVER_" + filename, 'wb') as f:
         f.write(file_data)
 
-    # send file to all clients
     for user, conn in active_clients:
         if conn != client:
             conn.sendall(f"FILE:{filename}".encode())
             conn.sendall(file_data)
+            conn.sendall(b"ENDFILE")
 
-#function to remove a client
 def remove_client(client, username):
     client.close()
     for user in active_clients:
@@ -46,32 +49,29 @@ def remove_client(client, username):
             active_clients.remove(user)
             break
 
-#function to handle client
 def client_handler(client):
-    while 1:
+    while True:
         username = client.recv(2048).decode('utf-8')
         if username != '':
             active_clients.append((username, client))
             break
-        else:
-            print("username is empty")
 
-    threading.Thread(target=listen_for_messages, args=(client, username, )).start()
+    threading.Thread(target=listen_for_messages, args=(client, username)).start()
 
 def main():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         server.bind((HOST, PORT))
-        print(f"server is running on {HOST} {PORT}")
+        print(f"Server running on {HOST}:{PORT}")
     except:
-        print(f"unable to bind to host {HOST} and port {PORT}")
+        print(f"Bind failed on {HOST}:{PORT}")
 
     server.listen(LISTENER_LIMIT)
 
-    while 1:
-        client, address = server.accept() 
-        print(f"successfully connected to client {address[0]} {address[1]}")
-        threading.Thread(target=client_handler, args=(client, )).start()
+    while True:
+        client, address = server.accept()
+        print(f"Connected to client {address}")
+        threading.Thread(target=client_handler, args=(client,)).start()
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()
