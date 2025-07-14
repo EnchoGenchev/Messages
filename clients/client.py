@@ -78,12 +78,23 @@ root.grid_rowconfigure(2, weight=1)
 top = tk.Frame(root, width=600, height=100, bg=GRAY)
 top.grid(row=0, column=0, sticky=tk.NSEW) 
 #adding features to window
-username_label = tk.Label(top, text="Enter username: ", font=FONT, bg=GRAY, fg=BLUE2)
-username_label.pack(side=tk.LEFT, padx=10)
-username_text = tk.Entry(top, font=FONT, bg=GRAY, fg=BLUE2, width=23)
+username_label = tk.Label(top, text="Username:", font=FONT, bg=GRAY, fg=BLUE2)
+username_label.pack(side=tk.LEFT, padx=3)
+username_text = tk.Entry(top, font=FONT, bg=GRAY, fg=BLUE2, width=9)
 username_text.pack(side=tk.LEFT)
 username_button = tk.Button(top, text="Join", font=FONT2, bg=GRAY, fg=BLUE2, command=connect)
-username_button.pack(side=tk.LEFT,padx=15)
+username_button.pack(side=tk.LEFT,padx=10)
+password_label = tk.Label(top, text="Key:", font=FONT, bg=GRAY, fg=BLUE2)
+password_label.pack(side=tk.LEFT, padx=3)
+password_text = tk.Entry(top, font=FONT, bg=GRAY, fg=BLUE2, width=9)
+password_text.pack(side=tk.LEFT)
+#dropdown menu for bits
+bit_var = tk.StringVar(top)
+bit_var.set("Bits")  # Initial display
+bit_dropdown = tk.OptionMenu(top, bit_var, "56-bit", "128-bit")
+bit_dropdown.config(font=FONT2, bg=GRAY, fg=BLUE2)
+bit_dropdown.pack(side=tk.LEFT, padx=5)
+
 
 middle = tk.Frame(root, width=600, height=400, bg=BLUE2)
 middle.grid(row=1,column=0, sticky=tk.NSEW)
