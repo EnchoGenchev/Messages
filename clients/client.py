@@ -48,7 +48,7 @@ def decrypt_file_bytes(data, key, bits):
             cipher = AES.new(key, AES.MODE_CBC, iv)
             return unpad(cipher.decrypt(encrypted), AES.block_size)
     except:
-        return data  # return raw if wrong key
+        return data
 
 def add_message(message):
     message_box.config(state=tk.NORMAL)
@@ -74,9 +74,17 @@ def connect():
 
 def send_message():
     message = message_textbox.get()
-    if message:
-        client.sendall(message.encode())
-        message_textbox.delete(0, tk.END)
+    key_input = password_text.get()
+    bits = bit_var.get()
+
+    if not message or not key_input or bits not in ["56-bit", "128-bit"]:
+        add_message("ERROR: Missing message, key, or bit selection")
+        return
+
+    key = derive_key(key_input, bits)
+    encrypted = encrypt_file_bytes(message.encode(), key, bits)
+    client.sendall(encrypted)
+    message_textbox.delete(0, tk.END)
 
 def send_file():
     filename = message_textbox.get()
@@ -126,9 +134,16 @@ def listen_for_messages(client):
                     f.write(decrypted_data)
                 add_message(f"[SERVER] File {filename} received")
             else:
-                decoded = message.decode('utf-8')
-                username, content = decoded.split("~", 1)
-                add_message(f"[{username}] {content}")
+                username, encrypted = message.split(b"~", 1)
+                key_input = password_text.get()
+                bits = bit_var.get()
+                key = derive_key(key_input, bits)
+                try:
+                    decrypted = decrypt_file_bytes(encrypted, key, bits).decode('utf-8')
+                    add_message(f"[{username.decode()}] {decrypted}")
+                except:
+                    add_message(f"[{username.decode()}] <INCORRECT KEY>")
+                
         except Exception as e:
             add_message(f"Connection lost: {e}")
             break

@@ -14,7 +14,7 @@ def listen_for_messages(client, username):
                 filename = message.decode().split(":", 1)[1]
                 receive_file(client, filename, username)
             else:
-                final_msg = username + '~' + message.decode('utf-8')
+                final_msg = username.encode() + b"~" + message
                 send_message(final_msg)
         except:
             remove_client(client, username)
@@ -22,7 +22,10 @@ def listen_for_messages(client, username):
 
 def send_message(message):
     for user, conn in active_clients:
-        conn.sendall(message.encode())
+        try:
+            conn.sendall(message)
+        except:
+            pass
 
 def receive_file(client, filename, username):
     file_data = b""
