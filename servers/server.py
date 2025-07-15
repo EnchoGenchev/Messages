@@ -3,14 +3,14 @@ import threading
 
 HOST = '127.0.0.1'
 PORT = 1234
-LISTENER_LIMIT = 2
+LISTENER_LIMIT = 2 #since application only for alice and bob
 active_clients = []
 
 def listen_for_messages(client, username):
     while True:
         try:
             message = client.recv(2048)
-            if message.startswith(b"FILE:"):
+            if message.startswith(b"FILE:"): #reads tag added by sending client
                 filename = message.decode().split(":", 1)[1]
                 receive_file(client, filename, username)
             else:
@@ -21,31 +21,35 @@ def listen_for_messages(client, username):
             break
 
 def send_message(message):
-    for user, conn in active_clients:
+    #sends the message to everyone connected to the server
+    for user, conn in active_clients: 
         try:
             conn.sendall(message)
         except:
             pass
 
 def receive_file(client, filename, username):
-    file_data = b""
+    file_data = b"" #to read file one chunk at a time and avoid early cutoffs
     while True:
         chunk = client.recv(1024)
+
+        #appending data to buffer until ENDFILE reached
         if b"ENDFILE" in chunk:
             file_data += chunk.replace(b"ENDFILE", b"")
             break
         file_data += chunk
 
     with open("SERVER_" + filename, 'wb') as f:
-        f.write(file_data)
+        f.write(file_data) #writing file data in server (easy to check whether encryption worked)
 
+    #sending file to all users connected to the server
     for user, conn in active_clients:
         if conn != client:
             conn.sendall(f"FILE:{filename}".encode())
             conn.sendall(file_data)
             conn.sendall(b"ENDFILE")
 
-def remove_client(client, username):
+def remove_client(client, username): #added so invalid usernames don't make the program stall
     client.close()
     for user in active_clients:
         if user[0] == username:
@@ -58,7 +62,7 @@ def client_handler(client):
         if username != '':
             active_clients.append((username, client))
             break
-
+    
     threading.Thread(target=listen_for_messages, args=(client, username)).start()
 
 def main():
@@ -66,7 +70,7 @@ def main():
     try:
         server.bind((HOST, PORT))
         print(f"Server running on {HOST}:{PORT}")
-    except:
+    except: #if host and port are being used by something else
         print(f"Bind failed on {HOST}:{PORT}")
 
     server.listen(LISTENER_LIMIT)
