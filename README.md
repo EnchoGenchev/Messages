@@ -1,4 +1,4 @@
-# Secure Two-Person Local Messaging Application
+# Messaging Application
 
 ## Description
 This is a two-person, locally hosted, secure messaging application.
