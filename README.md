@@ -19,10 +19,12 @@ This is a two-person, locally hosted, secure messaging application.
 3. Make sure the repository has access to all Python modules.
 
 ### Run
-Using the command line:
+1. Navigate to the repository in the command line
+2. Use the following command to run the project:
 ```bash
 python boot.py
 ```
+3. The server should start up and two chat windows should pop up
 
 ## Features
 - Input username in both client windows.
