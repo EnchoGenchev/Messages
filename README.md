@@ -6,8 +6,13 @@ This is a two-person, locally hosted, secure messaging application.
 ## Use
 
 ### Setup
-1. Create a local repository.
-2. Install all necessary dependencies:
+1. Install python at: https://www.python.org/downloads/
+2. Check if installed correctly:
+   ```bash
+   python --version
+   ``` 
+4. Create a local repository.
+5. Install all necessary dependencies:
    ```bash
    pip install pycryptodome
    ```
@@ -35,5 +40,5 @@ python boot.py
 - Click **File** to send the file to the other user.
 
 ### Notes
-- For the receiver to see the messages and files, the inputted key must match that of the sender.
+- For the receiver to see the messages and files, the inputted key and bit must match that of the sender.
 
