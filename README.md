@@ -11,7 +11,7 @@ This is a two-person, locally hosted, secure messaging application.
    ```bash
    python --version
    ``` 
-4. Create a local repository.
+4. Create a local version of this repository.
 5. Install all necessary dependencies:
    ```bash
    pip install pycryptodome
