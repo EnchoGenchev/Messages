@@ -16,7 +16,8 @@ This is a two-person, locally hosted, secure messaging application.
    ```bash
    pip install pycryptodome
    ```
-3. Make sure the repository has access to all Python modules.
+6. Make sure you have audio-preview extension installed in vscode to listen to audio files   
+7. Make sure the repository has access to all Python modules.
 
 ### Run
 1. Navigate to the repository in the command line
