@@ -7,7 +7,6 @@ from Crypto.Cipher import DES, AES
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
 import hashlib
-from datetime import datetime
 
 HOST = '127.0.0.1'
 PORT = 1234
